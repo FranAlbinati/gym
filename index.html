@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0b0b10" />
+<title>Iron · Gym Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+          display: ['"Space Grotesk"', 'Inter', 'ui-sans-serif'],
+        },
+        colors: {
+          ink: {
+            950: '#08080c',
+            900: '#0b0b12',
+            800: '#12131c',
+            700: '#1a1c28',
+            600: '#242737',
+            500: '#3a3e55',
+            400: '#6b7091',
+            300: '#a0a4c0',
+          },
+        },
+        boxShadow: {
+          glow: '0 10px 40px -10px rgba(120, 110, 255, .45)',
+          card: '0 1px 0 rgba(255,255,255,.04) inset, 0 20px 40px -20px rgba(0,0,0,.6)',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root { color-scheme: dark; }
+  html, body { background: #08080c; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(124,92,255,.18), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(255,92,182,.12), transparent 60%),
+      radial-gradient(700px 500px at 50% 100%, rgba(60,180,255,.10), transparent 60%),
+      #08080c;
+    min-height: 100dvh;
+  }
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015));
+    border: 1px solid rgba(255,255,255,.06);
+    backdrop-filter: blur(10px);
+  }
+  .grad-text {
+    background: linear-gradient(90deg,#fff, #c8c4ff 40%, #ffb8e0);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .grad-btn {
+    background: linear-gradient(135deg,#7c5cff,#ff5cb6);
+  }
+  .grad-btn:hover { filter: brightness(1.08); }
+  .chip {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.07);
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  input[type="number"] { -moz-appearance: textfield; }
+  .set-input {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    transition: all .15s ease;
+  }
+  .set-input:focus { border-color: #7c5cff; box-shadow: 0 0 0 3px rgba(124,92,255,.25); outline: none; }
+  .done { background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,92,182,.12)); border-color: rgba(124,92,255,.5); }
+  .fade-in { animation: fade .25s ease both; }
+  @keyframes fade { from { opacity:0; transform: translateY(4px);} to { opacity:1; transform:none;} }
+  .tap { -webkit-tap-highlight-color: transparent; }
+  .noscroll { overflow: hidden; }
+  .divider { height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); }
+  .avatar {
+    display:inline-flex; align-items:center; justify-content:center;
+    font-family: 'Space Grotesk', sans-serif; font-weight:700;
+    border: 1px solid rgba(255,255,255,.1);
+  }
+</style>
+</head>
+<body class="text-white antialiased selection:bg-fuchsia-500/40">
+
+<div id="app" class="max-w-xl mx-auto px-4 pb-32 pt-6"></div>
+
+<!-- Bottom nav -->
+<nav id="tabbar" class="fixed bottom-0 inset-x-0 z-40">
+  <div class="max-w-xl mx-auto px-4 pb-4">
+    <div class="glass rounded-2xl grid grid-cols-3 p-1 shadow-card">
+      <button data-tab="today" class="tab tap flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-medium text-ink-300">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 3 10l3.5 3.5"/><path d="M17.5 17.5 21 14l-3.5-3.5"/><path d="m14 4-4 16"/></svg>
+        <span>Hoy</span>
+      </button>
+      <button data-tab="routine" class="tab tap flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-medium text-ink-300">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/><path d="M8 4v4"/><path d="M16 4v4"/></svg>
+        <span>Rutina</span>
+      </button>
+      <button data-tab="history" class="tab tap flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-medium text-ink-300">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+        <span>Historial</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Modal container -->
+<div id="modal-root"></div>
+
+<script>
+/* ============================================================
+   Iron — Gym Tracker
+   Single-file app · localStorage · multi-user
+   ============================================================ */
+
+const LS_KEY = 'iron.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+/* ---------- Default seed ---------- */
+function defaultState() {
+  const franId = uid(), novId = uid();
+  return {
+    activeUserId: franId,
+    activeDayIdx: 0,
+    tab: 'today',
+    users: [
+      {
+        id: franId,
+        name: 'Fran',
+        color: 'from-indigo-500 to-fuchsia-500',
+        emoji: '💪',
+        unit: 'kg',
+        days: seedRoutinePPL(),
+      },
+      {
+        id: novId,
+        name: 'Ella',
+        color: 'from-pink-500 to-rose-400',
+        emoji: '🌸',
+        unit: 'kg',
+        days: seedRoutineFullBody(),
+      },
+    ],
+    // sessions: [{id, userId, dayId, dayName, date, entries:[{exerciseId,name,sets:[{w,r,done}]}]}]
+    sessions: [],
+    // current in-progress workouts keyed by userId → session obj
+    live: {},
+  };
+}
+
+function seedRoutinePPL() {
+  return [
+    {
+      id: uid(), name: 'Empuje', icon: '🔥',
+      exercises: [
+        ex('Press banca',         4, '6-8'),
+        ex('Press militar',       4, '8-10'),
+        ex('Press inclinado mancuernas', 3, '10-12'),
+        ex('Aperturas polea',     3, '12-15'),
+        ex('Fondos',              3, '8-12'),
+        ex('Extensión tríceps',   3, '10-12'),
+      ],
+    },
+    {
+      id: uid(), name: 'Tirón', icon: '🪝',
+      exercises: [
+        ex('Dominadas',           4, '6-10'),
+        ex('Remo con barra',      4, '8-10'),
+        ex('Jalón al pecho',      3, '10-12'),
+        ex('Remo polea baja',     3, '10-12'),
+        ex('Curl barra',          3, '10-12'),
+        ex('Curl martillo',       3, '10-12'),
+      ],
+    },
+    {
+      id: uid(), name: 'Pierna', icon: '🦵',
+      exercises: [
+        ex('Sentadilla',          5, '5-8'),
+        ex('Peso muerto rumano',  4, '8-10'),
+        ex('Prensa',              3, '10-12'),
+        ex('Extensión cuádriceps',3, '12-15'),
+        ex('Femoral tumbado',     3, '12-15'),
+        ex('Elevación gemelos',   4, '12-15'),
+      ],
+    },
+  ];
+}
+
+function seedRoutineFullBody() {
+  return [
+    {
+      id: uid(), name: 'Glúteo & Pierna', icon: '🍑',
+      exercises: [
+        ex('Hip thrust',          4, '10-12'),
+        ex('Sentadilla búlgara',  3, '10-12'),
+        ex('Peso muerto rumano',  3, '10-12'),
+        ex('Patada glúteo polea', 3, '12-15'),
+        ex('Abductores máquina',  3, '15'),
+        ex('Puente glúteo',       3, '15'),
+      ],
+    },
+    {
+      id: uid(), name: 'Tren superior', icon: '✨',
+      exercises: [
+        ex('Press mancuernas',    3, '10-12'),
+        ex('Remo polea',          3, '10-12'),
+        ex('Elevaciones laterales',3,'12-15'),
+        ex('Curl bíceps',         3, '10-12'),
+        ex('Tríceps polea',       3, '10-12'),
+        ex('Plancha',             3, '30-60s'),
+      ],
+    },
+    {
+      id: uid(), name: 'Full body', icon: '⚡',
+      exercises: [
+        ex('Sentadilla goblet',   3, '10-12'),
+        ex('Hip thrust',          3, '12'),
+        ex('Remo mancuerna',      3, '10-12'),
+        ex('Press militar mancuernas',3,'10-12'),
+        ex('Zancadas',            3, '12'),
+        ex('Abdominales',         3, '15-20'),
+      ],
+    },
+  ];
+}
+
+function ex(name, sets, reps) {
+  return { id: uid(), name, sets, reps, notes: '' };
+}
+
+/* ---------- Storage ---------- */
+let state = load();
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    // sanity fill
+    if (!parsed.live) parsed.live = {};
+    if (!parsed.sessions) parsed.sessions = [];
+    return parsed;
+  } catch (e) { return defaultState(); }
+}
+function save() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ---------- Helpers ---------- */
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+const activeUser = () => state.users.find(u => u.id === state.activeUserId) || state.users[0];
+const fmtDate = (ts) => {
+  const d = new Date(ts);
+  return d.toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' });
+};
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+const relDay = (ts) => {
+  const diff = Math.floor((Date.now() - ts) / 86400000);
+  if (diff <= 0) return 'Hoy';
+  if (diff === 1) return 'Ayer';
+  if (diff < 7) return `Hace ${diff} días`;
+  return fmtDate(ts);
+};
+
+function lastLog(userId, exerciseId) {
+  const sessions = state.sessions
+    .filter(s => s.userId === userId)
+    .sort((a,b) => b.date - a.date);
+  for (const s of sessions) {
+    const e = s.entries.find(x => x.exerciseId === exerciseId);
+    if (e) {
+      const doneSets = e.sets.filter(x => x.done && (x.w || x.r));
+      if (doneSets.length) return { date: s.date, sets: doneSets };
+    }
+  }
+  return null;
+}
+
+function bestSet(userId, exerciseId) {
+  let best = null;
+  for (const s of state.sessions.filter(x => x.userId === userId)) {
+    const e = s.entries.find(x => x.exerciseId === exerciseId);
+    if (!e) continue;
+    for (const set of e.sets) {
+      if (!set.done) continue;
+      const w = Number(set.w) || 0;
+      if (!best || w > best.w) best = { w, r: set.r, date: s.date };
+    }
+  }
+  return best;
+}
+
+/* ---------- Live workout ---------- */
+function getOrStartLive(user, dayIdx) {
+  const day = user.days[dayIdx];
+  const existing = state.live[user.id];
+  if (existing && existing.dayId === day.id) return existing;
+  const fresh = {
+    id: uid(),
+    userId: user.id,
+    dayId: day.id,
+    dayName: day.name,
+    date: Date.now(),
+    entries: day.exercises.map(x => {
+      const last = lastLog(user.id, x.id);
+      return {
+        exerciseId: x.id,
+        name: x.name,
+        sets: Array.from({length: x.sets}, (_,i) => ({
+          w: last && last.sets[i] ? last.sets[i].w : '',
+          r: '',
+          done: false,
+        })),
+      };
+    }),
+  };
+  state.live[user.id] = fresh;
+  save();
+  return fresh;
+}
+
+function finishLive() {
+  const u = activeUser();
+  const live = state.live[u.id];
+  if (!live) return;
+  // Only save if at least one set is done
+  const anyDone = live.entries.some(e => e.sets.some(s => s.done));
+  if (anyDone) {
+    live.date = Date.now();
+    state.sessions.push(JSON.parse(JSON.stringify(live)));
+  }
+  delete state.live[u.id];
+  save();
+  render();
+}
+
+function discardLive() {
+  const u = activeUser();
+  delete state.live[u.id];
+  save();
+  render();
+}
+
+/* ---------- Rendering ---------- */
+function render() {
+  const app = $('#app');
+  app.innerHTML = header() + (
+    state.tab === 'today'   ? viewToday()   :
+    state.tab === 'routine' ? viewRoutine() :
+    viewHistory()
+  );
+  bindTabs();
+  bindDynamic();
+}
+
+function header() {
+  const u = activeUser();
+  const initials = u.name.slice(0,2).toUpperCase();
+  return `
+    <header class="flex items-center justify-between mb-6 fade-in">
+      <div>
+        <div class="text-[11px] uppercase tracking-[.2em] text-ink-400">Iron</div>
+        <h1 class="font-display text-3xl font-bold grad-text leading-tight">Tu gimnasio.</h1>
+      </div>
+      <button id="userSwitch" class="tap glass rounded-full pl-1 pr-3 py-1 flex items-center gap-2 shadow-card">
+        <span class="avatar w-8 h-8 rounded-full bg-gradient-to-br ${u.color} text-sm">${initials}</span>
+        <span class="text-sm font-medium">${escapeHtml(u.name)}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-ink-300"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </header>
+  `;
+}
+
+/* ---------- Today (workout) ---------- */
+function viewToday() {
+  const u = activeUser();
+  const live = state.live[u.id];
+  const dayIdx = live
+    ? u.days.findIndex(d => d.id === live.dayId)
+    : Math.min(state.activeDayIdx, u.days.length-1);
+  const day = u.days[dayIdx] || u.days[0];
+
+  const dayTabs = u.days.map((d,i) => `
+    <button data-day="${i}" class="day-tab tap px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap ${i===dayIdx ? 'bg-white text-ink-900' : 'chip text-ink-300'}">
+      <span class="mr-1">${d.icon || '•'}</span>${escapeHtml(d.name)}
+    </button>
+  `).join('');
+
+  const target = live || getPreviewSession(u, dayIdx);
+  const started = !!live;
+  const done = target.entries.reduce((a,e) => a + e.sets.filter(s=>s.done).length, 0);
+  const total = target.entries.reduce((a,e) => a + e.sets.length, 0);
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  return `
+    <section class="fade-in">
+      <div class="flex gap-2 overflow-x-auto -mx-4 px-4 pb-3">${dayTabs}</div>
+
+      <div class="glass rounded-3xl p-5 shadow-card mb-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-xs text-ink-400 uppercase tracking-wider">Sesión de hoy</div>
+            <div class="font-display text-2xl font-bold mt-1">${day.icon || ''} ${escapeHtml(day.name)}</div>
+            <div class="text-sm text-ink-300 mt-1">${day.exercises.length} ejercicios · ${total} sets</div>
+          </div>
+          ${started
+            ? `<span class="chip rounded-full px-3 py-1 text-xs text-emerald-300">● En curso</span>`
+            : `<button id="startBtn" class="tap grad-btn rounded-full px-4 py-2 text-sm font-semibold shadow-glow">Empezar</button>`}
+        </div>
+
+        <div class="mt-4 h-2 rounded-full bg-white/5 overflow-hidden">
+          <div class="h-full grad-btn transition-all" style="width:${pct}%"></div>
+        </div>
+        <div class="flex justify-between text-[11px] text-ink-400 mt-1">
+          <span>${done}/${total} sets</span><span>${pct}%</span>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        ${target.entries.map((e,i) => exerciseCard(u, e, i, started)).join('')}
+      </div>
+
+      ${started ? `
+        <div class="mt-6 flex gap-2">
+          <button id="discardBtn" class="tap flex-1 chip rounded-2xl py-3 text-sm font-medium text-ink-300">Descartar</button>
+          <button id="finishBtn" class="tap flex-1 grad-btn rounded-2xl py-3 text-sm font-bold shadow-glow">Terminar entreno</button>
+        </div>
+      ` : `
+        <div class="mt-6 text-center text-xs text-ink-400">
+          Podés cambiar cualquier ejercicio antes o durante la sesión.
+        </div>
+      `}
+    </section>
+  `;
+}
+
+function getPreviewSession(u, dayIdx) {
+  const day = u.days[dayIdx];
+  return {
+    entries: day.exercises.map(x => {
+      const last = lastLog(u.id, x.id);
+      return {
+        exerciseId: x.id,
+        name: x.name,
+        sets: Array.from({length: x.sets}, (_,i) => ({
+          w: last && last.sets[i] ? last.sets[i].w : '',
+          r: '', done: false,
+        })),
+      };
+    }),
+  };
+}
+
+function exerciseCard(user, entry, idx, started) {
+  const exDef = user.days.flatMap(d => d.exercises).find(x => x.id === entry.exerciseId);
+  const reps = exDef ? exDef.reps : '';
+  const last = lastLog(user.id, entry.exerciseId);
+  const best = bestSet(user.id, entry.exerciseId);
+  const doneCount = entry.sets.filter(s=>s.done).length;
+
+  return `
+    <article class="glass rounded-2xl p-4 shadow-card" data-ex="${entry.exerciseId}">
+      <header class="flex items-start justify-between gap-3 mb-3">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="font-display font-bold text-lg leading-tight truncate">${escapeHtml(entry.name)}</h3>
+            <span class="chip rounded-full px-2 py-0.5 text-[11px] text-ink-300">${entry.sets.length} × ${escapeHtml(reps)}</span>
+          </div>
+          <div class="text-[11px] text-ink-400 mt-1 flex gap-3 flex-wrap">
+            ${last ? `<span>Última: ${last.sets.map(s => `${s.w||0}×${s.r||0}`).join(' · ')}</span>` : `<span>Sin registros previos</span>`}
+            ${best ? `<span class="text-fuchsia-300">PR ${best.w}${user.unit}</span>` : ''}
+          </div>
+        </div>
+        <button class="tap chip rounded-full w-8 h-8 flex items-center justify-center text-ink-300" data-action="swap" data-ex="${entry.exerciseId}" title="Cambiar ejercicio">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>
+        </button>
+      </header>
+
+      <div class="grid grid-cols-[auto_1fr_1fr_auto] gap-2 items-center text-[11px] text-ink-400 mb-1 px-1">
+        <div class="w-6">Set</div><div>${user.unit}</div><div>Reps</div><div class="w-9 text-center">✓</div>
+      </div>
+      <div class="space-y-2">
+        ${entry.sets.map((s,si) => setRow(entry.exerciseId, si, s)).join('')}
+      </div>
+
+      <div class="flex justify-between items-center mt-3">
+        <button class="tap text-xs text-ink-300 hover:text-white" data-action="addset" data-ex="${entry.exerciseId}">+ Agregar set</button>
+        <span class="text-[11px] text-ink-400">${doneCount}/${entry.sets.length}</span>
+      </div>
+    </article>
+  `;
+}
+
+function setRow(exId, si, s) {
+  return `
+    <div class="grid grid-cols-[auto_1fr_1fr_auto] gap-2 items-center ${s.done ? 'done rounded-xl p-1' : ''}" data-set="${si}" data-ex="${exId}">
+      <div class="w-6 text-center text-ink-300 text-sm font-medium">${si+1}</div>
+      <input type="number" inputmode="decimal" step="0.5" class="set-input weight rounded-xl px-3 py-2 text-sm w-full" placeholder="—" value="${s.w ?? ''}" />
+      <input type="number" inputmode="numeric" class="set-input reps rounded-xl px-3 py-2 text-sm w-full" placeholder="—" value="${s.r ?? ''}" />
+      <button class="check tap w-9 h-9 rounded-xl flex items-center justify-center ${s.done ? 'bg-white text-ink-900' : 'chip text-ink-300'}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </button>
+    </div>
+  `;
+}
+
+/* ---------- Routine editor ---------- */
+function viewRoutine() {
+  const u = activeUser();
+  return `
+    <section class="fade-in">
+      <div class="glass rounded-3xl p-5 shadow-card mb-4">
+        <div class="text-xs text-ink-400 uppercase tracking-wider">Rutina de</div>
+        <div class="flex items-center justify-between gap-3">
+          <div class="font-display text-2xl font-bold mt-1">${u.emoji} ${escapeHtml(u.name)}</div>
+          <button id="addDay" class="tap chip rounded-full px-3 py-1 text-xs">+ Día</button>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        ${u.days.map((d,di) => `
+          <div class="glass rounded-2xl p-4 shadow-card">
+            <div class="flex items-center gap-2 mb-3">
+              <input class="day-name bg-transparent font-display text-lg font-bold flex-1 outline-none focus:bg-white/5 rounded-lg px-2 py-1" data-day="${di}" value="${escapeHtml(d.name)}" />
+              <button class="tap text-ink-400 hover:text-red-400 px-2" data-action="delday" data-day="${di}" title="Eliminar día">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6 18 20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              </button>
+            </div>
+            <ul class="space-y-2">
+              ${d.exercises.map((x,xi) => `
+                <li class="flex items-center gap-2 chip rounded-xl px-3 py-2" data-day="${di}" data-ex-idx="${xi}">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate">${escapeHtml(x.name)}</div>
+                    <div class="text-[11px] text-ink-400">${x.sets} × ${escapeHtml(x.reps)}</div>
+                  </div>
+                  <button class="tap text-xs text-ink-300 hover:text-white" data-action="edit-ex" data-day="${di}" data-ex-idx="${xi}">Editar</button>
+                  <button class="tap text-ink-400 hover:text-red-400" data-action="del-ex" data-day="${di}" data-ex-idx="${xi}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                </li>
+              `).join('')}
+            </ul>
+            <button class="tap mt-3 w-full text-sm chip rounded-xl py-2 text-ink-300" data-action="add-ex" data-day="${di}">+ Agregar ejercicio</button>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `;
+}
+
+/* ---------- History ---------- */
+function viewHistory() {
+  const u = activeUser();
+  const list = state.sessions
+    .filter(s => s.userId === u.id)
+    .sort((a,b) => b.date - a.date);
+
+  if (!list.length) {
+    return `
+      <section class="fade-in text-center py-16">
+        <div class="text-5xl mb-3">📓</div>
+        <h2 class="font-display text-xl font-bold">Todavía no hay historial</h2>
+        <p class="text-sm text-ink-300 mt-1">Terminá tu primera sesión y aparecerá acá.</p>
+      </section>
+    `;
+  }
+
+  // simple stats
+  const total = list.length;
+  const totalVolume = list.reduce((a,s) =>
+    a + s.entries.reduce((b,e) => b + e.sets.reduce((c,x) => c + (Number(x.w)||0)*(Number(x.r)||0)*(x.done?1:0), 0), 0)
+  , 0);
+
+  return `
+    <section class="fade-in">
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="glass rounded-2xl p-4 shadow-card">
+          <div class="text-xs text-ink-400 uppercase tracking-wider">Sesiones</div>
+          <div class="font-display text-2xl font-bold">${total}</div>
+        </div>
+        <div class="glass rounded-2xl p-4 shadow-card">
+          <div class="text-xs text-ink-400 uppercase tracking-wider">Volumen total</div>
+          <div class="font-display text-2xl font-bold">${Math.round(totalVolume).toLocaleString('es-AR')} <span class="text-sm text-ink-300">${u.unit}</span></div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        ${list.map(s => `
+          <article class="glass rounded-2xl p-4 shadow-card">
+            <header class="flex items-center justify-between mb-2">
+              <div>
+                <div class="font-display font-bold">${escapeHtml(s.dayName)}</div>
+                <div class="text-[11px] text-ink-400">${relDay(s.date)} · ${fmtTime(s.date)}</div>
+              </div>
+              <button class="tap chip rounded-full px-2 py-1 text-[11px] text-ink-300" data-action="del-session" data-id="${s.id}">Eliminar</button>
+            </header>
+            <ul class="text-sm space-y-1">
+              ${s.entries.map(e => {
+                const done = e.sets.filter(x=>x.done);
+                if (!done.length) return '';
+                return `<li class="flex justify-between gap-3">
+                  <span class="truncate text-ink-300">${escapeHtml(e.name)}</span>
+                  <span class="text-ink-200 tabular-nums text-right">${done.map(x=>`${x.w||0}×${x.r||0}`).join(' · ')}</span>
+                </li>`;
+              }).join('')}
+            </ul>
+          </article>
+        `).join('')}
+      </div>
+    </section>
+  `;
+}
+
+/* ---------- Modals ---------- */
+function openModal(html) {
+  const root = $('#modal-root');
+  root.innerHTML = `
+    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 fade-in" id="modal-backdrop">
+      <div class="w-full max-w-md glass rounded-t-3xl sm:rounded-3xl p-5 shadow-card max-h-[85vh] overflow-y-auto">
+        ${html}
+      </div>
+    </div>
+  `;
+  document.body.classList.add('noscroll');
+  $('#modal-backdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'modal-backdrop') closeModal();
+  });
+}
+function closeModal() {
+  $('#modal-root').innerHTML = '';
+  document.body.classList.remove('noscroll');
+}
+
+function modalUserSwitch() {
+  const list = state.users.map(u => {
+    const active = u.id === state.activeUserId;
+    return `
+      <button class="tap w-full flex items-center gap-3 p-3 rounded-2xl ${active ? 'bg-white text-ink-900' : 'chip'}" data-pick="${u.id}">
+        <span class="avatar w-10 h-10 rounded-full bg-gradient-to-br ${u.color}">${u.name.slice(0,2).toUpperCase()}</span>
+        <div class="flex-1 text-left">
+          <div class="font-semibold">${escapeHtml(u.name)}</div>
+          <div class="text-xs ${active ? 'text-ink-500' : 'text-ink-400'}">${u.days.length} días · ${u.unit}</div>
+        </div>
+        ${active ? '<span class="text-xs">✓</span>' : ''}
+        <button class="tap text-ink-400 hover:text-white px-2 ${active?'text-ink-500':''}" data-edit-user="${u.id}">✎</button>
+      </button>
+    `;
+  }).join('');
+
+  openModal(`
+    <h3 class="font-display text-xl font-bold mb-3">¿Quién entrena?</h3>
+    <div class="space-y-2 mb-4">${list}</div>
+    <button class="tap w-full grad-btn rounded-2xl py-3 font-semibold" id="addUser">+ Agregar persona</button>
+  `);
+
+  $$('[data-pick]').forEach(b => b.addEventListener('click', (e) => {
+    if (e.target.closest('[data-edit-user]')) return;
+    state.activeUserId = b.dataset.pick;
+    state.activeDayIdx = 0;
+    save(); closeModal(); render();
+  }));
+  $$('[data-edit-user]').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    modalEditUser(b.dataset.editUser);
+  }));
+  $('#addUser').addEventListener('click', () => modalEditUser(null));
+}
+
+function modalEditUser(userId) {
+  const isNew = !userId;
+  const u = isNew ? { name:'', emoji:'💪', color:'from-cyan-500 to-blue-500', unit:'kg' } : state.users.find(x=>x.id===userId);
+  const palettes = [
+    ['from-indigo-500 to-fuchsia-500','Índigo'],
+    ['from-pink-500 to-rose-400','Rosa'],
+    ['from-cyan-500 to-blue-500','Cian'],
+    ['from-emerald-500 to-teal-400','Verde'],
+    ['from-amber-500 to-orange-500','Ámbar'],
+    ['from-violet-500 to-purple-500','Violeta'],
+  ];
+  openModal(`
+    <h3 class="font-display text-xl font-bold mb-4">${isNew?'Nueva persona':'Editar '+escapeHtml(u.name)}</h3>
+    <label class="block text-xs text-ink-400 mb-1">Nombre</label>
+    <input id="u-name" class="set-input rounded-xl px-3 py-2 w-full mb-3" value="${escapeHtml(u.name)}" placeholder="Ej: Fran" />
+    <label class="block text-xs text-ink-400 mb-1">Emoji</label>
+    <input id="u-emoji" class="set-input rounded-xl px-3 py-2 w-full mb-3" value="${escapeHtml(u.emoji||'')}" maxlength="2" />
+    <label class="block text-xs text-ink-400 mb-1">Color</label>
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      ${palettes.map(([c,n]) => `
+        <button data-color="${c}" class="tap chip rounded-xl p-2 text-xs flex items-center gap-2 ${u.color===c?'ring-2 ring-white':''}">
+          <span class="w-5 h-5 rounded-full bg-gradient-to-br ${c}"></span>${n}
+        </button>
+      `).join('')}
+    </div>
+    <label class="block text-xs text-ink-400 mb-1">Unidad</label>
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <button data-unit="kg" class="tap chip rounded-xl py-2 text-sm ${u.unit==='kg'?'bg-white text-ink-900':''}">kg</button>
+      <button data-unit="lb" class="tap chip rounded-xl py-2 text-sm ${u.unit==='lb'?'bg-white text-ink-900':''}">lb</button>
+    </div>
+    <div class="flex gap-2">
+      ${!isNew && state.users.length>1 ? `<button id="u-delete" class="tap chip rounded-2xl py-3 px-4 text-sm text-red-300">Eliminar</button>` : ''}
+      <button id="u-save" class="tap flex-1 grad-btn rounded-2xl py-3 font-semibold">Guardar</button>
+    </div>
+  `);
+
+  let picked = { color: u.color, unit: u.unit };
+  $$('[data-color]').forEach(b => b.addEventListener('click', () => {
+    picked.color = b.dataset.color;
+    $$('[data-color]').forEach(x => x.classList.toggle('ring-2', x.dataset.color===picked.color));
+    $$('[data-color]').forEach(x => x.classList.toggle('ring-white', x.dataset.color===picked.color));
+  }));
+  $$('[data-unit]').forEach(b => b.addEventListener('click', () => {
+    picked.unit = b.dataset.unit;
+    $$('[data-unit]').forEach(x => {
+      x.classList.toggle('bg-white', x.dataset.unit===picked.unit);
+      x.classList.toggle('text-ink-900', x.dataset.unit===picked.unit);
+    });
+  }));
+  $('#u-save').addEventListener('click', () => {
+    const name = $('#u-name').value.trim() || 'Sin nombre';
+    const emoji = $('#u-emoji').value.trim() || '💪';
+    if (isNew) {
+      const nu = { id: uid(), name, emoji, color: picked.color, unit: picked.unit, days: seedRoutineFullBody() };
+      state.users.push(nu);
+      state.activeUserId = nu.id;
+    } else {
+      u.name = name; u.emoji = emoji; u.color = picked.color; u.unit = picked.unit;
+    }
+    save(); closeModal(); render();
+  });
+  if ($('#u-delete')) $('#u-delete').addEventListener('click', () => {
+    if (!confirm(`¿Eliminar a ${u.name} y toda su información?`)) return;
+    state.users = state.users.filter(x => x.id !== u.id);
+    state.sessions = state.sessions.filter(s => s.userId !== u.id);
+    delete state.live[u.id];
+    if (state.activeUserId === u.id) state.activeUserId = state.users[0].id;
+    save(); closeModal(); render();
+  });
+}
+
+function modalEditExercise(dayIdx, exIdx) {
+  const u = activeUser();
+  const isNew = exIdx == null;
+  const x = isNew ? { name:'', sets:3, reps:'10-12', notes:'' } : u.days[dayIdx].exercises[exIdx];
+  openModal(`
+    <h3 class="font-display text-xl font-bold mb-4">${isNew?'Nuevo ejercicio':'Editar ejercicio'}</h3>
+    <label class="block text-xs text-ink-400 mb-1">Nombre</label>
+    <input id="x-name" class="set-input rounded-xl px-3 py-2 w-full mb-3" value="${escapeHtml(x.name)}" placeholder="Ej: Press banca" />
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div>
+        <label class="block text-xs text-ink-400 mb-1">Sets</label>
+        <input id="x-sets" type="number" min="1" max="20" class="set-input rounded-xl px-3 py-2 w-full" value="${x.sets}" />
+      </div>
+      <div>
+        <label class="block text-xs text-ink-400 mb-1">Reps</label>
+        <input id="x-reps" class="set-input rounded-xl px-3 py-2 w-full" value="${escapeHtml(x.reps)}" placeholder="8-12" />
+      </div>
+    </div>
+    <label class="block text-xs text-ink-400 mb-1">Notas (opcional)</label>
+    <textarea id="x-notes" class="set-input rounded-xl px-3 py-2 w-full mb-4" rows="2">${escapeHtml(x.notes||'')}</textarea>
+    <div class="flex gap-2">
+      <button id="x-cancel" class="tap chip rounded-2xl py-3 px-4 text-sm">Cancelar</button>
+      <button id="x-save" class="tap flex-1 grad-btn rounded-2xl py-3 font-semibold">Guardar</button>
+    </div>
+  `);
+  $('#x-cancel').addEventListener('click', closeModal);
+  $('#x-save').addEventListener('click', () => {
+    const name = $('#x-name').value.trim();
+    if (!name) return;
+    const sets = Math.max(1, Number($('#x-sets').value)||3);
+    const reps = $('#x-reps').value.trim() || '10-12';
+    const notes = $('#x-notes').value.trim();
+    if (isNew) {
+      u.days[dayIdx].exercises.push({ id: uid(), name, sets, reps, notes });
+    } else {
+      Object.assign(x, { name, sets, reps, notes });
+    }
+    save(); closeModal(); render();
+  });
+}
+
+function modalSwap(exerciseId) {
+  const u = activeUser();
+  // Find in day
+  const live = state.live[u.id];
+  const dayIdx = live
+    ? u.days.findIndex(d => d.id === live.dayId)
+    : state.activeDayIdx;
+  const day = u.days[dayIdx];
+  const exIdx = day.exercises.findIndex(x => x.id === exerciseId);
+  const current = day.exercises[exIdx];
+
+  openModal(`
+    <h3 class="font-display text-xl font-bold mb-1">Cambiar ejercicio</h3>
+    <p class="text-sm text-ink-300 mb-4">Reemplazá <b>${escapeHtml(current.name)}</b> por otro.</p>
+    <label class="block text-xs text-ink-400 mb-1">Nuevo nombre</label>
+    <input id="sw-name" class="set-input rounded-xl px-3 py-2 w-full mb-3" value="${escapeHtml(current.name)}" />
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div><label class="block text-xs text-ink-400 mb-1">Sets</label>
+        <input id="sw-sets" type="number" min="1" max="20" class="set-input rounded-xl px-3 py-2 w-full" value="${current.sets}" /></div>
+      <div><label class="block text-xs text-ink-400 mb-1">Reps</label>
+        <input id="sw-reps" class="set-input rounded-xl px-3 py-2 w-full" value="${escapeHtml(current.reps)}" /></div>
+    </div>
+    <label class="flex items-center gap-2 text-sm text-ink-300 mb-4">
+      <input type="checkbox" id="sw-perm" class="accent-fuchsia-500" />
+      Guardar el cambio en la rutina (no solo para hoy)
+    </label>
+    <div class="flex gap-2">
+      <button id="sw-cancel" class="tap chip rounded-2xl py-3 px-4 text-sm">Cancelar</button>
+      <button id="sw-save" class="tap flex-1 grad-btn rounded-2xl py-3 font-semibold">Aplicar</button>
+    </div>
+  `);
+  $('#sw-cancel').addEventListener('click', closeModal);
+  $('#sw-save').addEventListener('click', () => {
+    const name = $('#sw-name').value.trim() || current.name;
+    const sets = Math.max(1, Number($('#sw-sets').value)||current.sets);
+    const reps = $('#sw-reps').value.trim() || current.reps;
+    const perm = $('#sw-perm').checked;
+
+    if (perm) {
+      // Replace in routine (new id → treated as different exercise, historial de este se mantiene por id anterior)
+      const newEx = { id: uid(), name, sets, reps, notes: current.notes || '' };
+      day.exercises[exIdx] = newEx;
+      // If there's a live session, update the live entry to point to new exercise
+      if (live) {
+        const le = live.entries.find(e => e.exerciseId === current.id);
+        if (le) {
+          le.exerciseId = newEx.id;
+          le.name = newEx.name;
+          adjustSetsCount(le, sets);
+        }
+      }
+    } else {
+      // Only affect current live/preview: create/get live and swap
+      const l = getOrStartLive(u, dayIdx);
+      const le = l.entries.find(e => e.exerciseId === current.id) || l.entries[exIdx];
+      le.name = name;
+      adjustSetsCount(le, sets);
+    }
+    save(); closeModal(); render();
+  });
+}
+
+function adjustSetsCount(entry, sets) {
+  while (entry.sets.length < sets) entry.sets.push({ w:'', r:'', done:false });
+  while (entry.sets.length > sets) entry.sets.pop();
+}
+
+/* ---------- Bindings ---------- */
+function bindTabs() {
+  $$('#tabbar .tab').forEach(b => {
+    const active = b.dataset.tab === state.tab;
+    b.classList.toggle('text-white', active);
+    b.classList.toggle('bg-white/5', active);
+    b.classList.toggle('text-ink-300', !active);
+    b.onclick = () => { state.tab = b.dataset.tab; save(); render(); };
+  });
+}
+
+function bindDynamic() {
+  const userBtn = $('#userSwitch');
+  if (userBtn) userBtn.onclick = modalUserSwitch;
+
+  // TODAY
+  $$('.day-tab').forEach(b => b.onclick = () => {
+    state.activeDayIdx = Number(b.dataset.day);
+    save(); render();
+  });
+  const startBtn = $('#startBtn');
+  if (startBtn) startBtn.onclick = () => {
+    getOrStartLive(activeUser(), state.activeDayIdx);
+    render();
+  };
+  const finishBtn = $('#finishBtn');
+  if (finishBtn) finishBtn.onclick = () => {
+    if (confirm('¿Terminar y guardar el entrenamiento?')) finishLive();
+  };
+  const discardBtn = $('#discardBtn');
+  if (discardBtn) discardBtn.onclick = () => {
+    if (confirm('¿Descartar la sesión actual? No se guardará nada.')) discardLive();
+  };
+
+  // Set rows (only meaningful when live exists)
+  const u = activeUser();
+  const live = state.live[u.id];
+  if (live) {
+    $$('[data-ex]').forEach(card => {
+      const exId = card.dataset.ex;
+      const entry = live.entries.find(e => e.exerciseId === exId);
+      if (!entry) return;
+      $$('[data-set]', card).forEach(row => {
+        const si = Number(row.dataset.set);
+        const s = entry.sets[si];
+        if (!s) return;
+        const w = $('.weight', row), r = $('.reps', row), c = $('.check', row);
+        w.oninput = () => { s.w = w.value; save(); };
+        r.oninput = () => { s.r = r.value; save(); };
+        c.onclick = () => {
+          s.done = !s.done;
+          if (s.done && !s.r) s.r = ''; // no auto-fill
+          save(); render();
+        };
+      });
+    });
+  } else {
+    // preview: disable inputs subtly
+    $$('.set-input').forEach(i => { i.readOnly = true; i.classList.add('opacity-60'); });
+    $$('.check').forEach(c => c.disabled = true);
+  }
+
+  // Swap / add set (both live and preview)
+  $$('[data-action="swap"]').forEach(b => b.onclick = () => modalSwap(b.dataset.ex));
+  $$('[data-action="addset"]').forEach(b => b.onclick = () => {
+    const exId = b.dataset.ex;
+    const l = getOrStartLive(activeUser(), state.activeDayIdx);
+    const e = l.entries.find(x => x.exerciseId === exId);
+    if (e) e.sets.push({ w:'', r:'', done:false });
+    save(); render();
+  });
+
+  // ROUTINE
+  const addDay = $('#addDay');
+  if (addDay) addDay.onclick = () => {
+    activeUser().days.push({ id: uid(), name:'Nuevo día', icon:'✨', exercises: [] });
+    save(); render();
+  };
+  $$('.day-name').forEach(inp => inp.onchange = () => {
+    const di = Number(inp.dataset.day);
+    activeUser().days[di].name = inp.value.trim() || 'Sin nombre';
+    save();
+  });
+  $$('[data-action="delday"]').forEach(b => b.onclick = () => {
+    const di = Number(b.dataset.day);
+    if (!confirm(`¿Eliminar el día "${activeUser().days[di].name}"?`)) return;
+    activeUser().days.splice(di,1);
+    if (state.activeDayIdx >= activeUser().days.length) state.activeDayIdx = 0;
+    save(); render();
+  });
+  $$('[data-action="add-ex"]').forEach(b => b.onclick = () => {
+    modalEditExercise(Number(b.dataset.day), null);
+  });
+  $$('[data-action="edit-ex"]').forEach(b => b.onclick = () => {
+    modalEditExercise(Number(b.dataset.day), Number(b.dataset.exIdx));
+  });
+  $$('[data-action="del-ex"]').forEach(b => b.onclick = () => {
+    const di = Number(b.dataset.day), xi = Number(b.dataset.exIdx);
+    if (!confirm(`¿Eliminar "${activeUser().days[di].exercises[xi].name}"?`)) return;
+    activeUser().days[di].exercises.splice(xi,1);
+    save(); render();
+  });
+
+  // HISTORY
+  $$('[data-action="del-session"]').forEach(b => b.onclick = () => {
+    if (!confirm('¿Eliminar esta sesión del historial?')) return;
+    state.sessions = state.sessions.filter(s => s.id !== b.dataset.id);
+    save(); render();
+  });
+}
+
+function escapeHtml(str='') {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+render();
+</script>
+</body>
+</html>
