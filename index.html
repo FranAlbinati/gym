@@ -121,7 +121,7 @@
    Single-file app · localStorage · multi-user
    ============================================================ */
 
-const LS_KEY = 'iron.v1';
+const LS_KEY = 'iron.v2';
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 /* ---------- Default seed ---------- */
@@ -138,6 +138,8 @@ function defaultState() {
         color: 'from-indigo-500 to-fuchsia-500',
         emoji: '💪',
         unit: 'kg',
+        phone: '',
+        partnerId: novId,
         days: seedRoutinePPL(),
       },
       {
@@ -146,6 +148,8 @@ function defaultState() {
         color: 'from-pink-500 to-rose-400',
         emoji: '🌸',
         unit: 'kg',
+        phone: '',
+        partnerId: franId,
         days: seedRoutineFullBody(),
       },
     ],
@@ -159,36 +163,44 @@ function defaultState() {
 function seedRoutinePPL() {
   return [
     {
-      id: uid(), name: 'Empuje', icon: '🔥',
+      id: uid(), name: 'Piernas', icon: '🦵',
       exercises: [
-        ex('Press banca',         4, '6-8'),
-        ex('Press militar',       4, '8-10'),
-        ex('Press inclinado mancuernas', 3, '10-12'),
-        ex('Aperturas polea',     3, '12-15'),
-        ex('Fondos',              3, '8-12'),
-        ex('Extensión tríceps',   3, '10-12'),
+        ex('Camilla femoral',           5, '10'),
+        ex('Sentadillas',               6, '20, 20, 10, 10, 15, 15'),
+        ex('Prensa 45°',                2, '10, 20'),
+        ex('Extensión de cuádriceps',   5, '15'),
+        ex('Estocadas',                 3, '10 por pierna'),
       ],
     },
     {
-      id: uid(), name: 'Tirón', icon: '🪝',
+      id: uid(), name: 'Push', icon: '🔥',
       exercises: [
-        ex('Dominadas',           4, '6-10'),
-        ex('Remo con barra',      4, '8-10'),
-        ex('Jalón al pecho',      3, '10-12'),
-        ex('Remo polea baja',     3, '10-12'),
-        ex('Curl barra',          3, '10-12'),
-        ex('Curl martillo',       3, '10-12'),
+        ex('Press banca inclinado',                 4, '10, 10, 8, 8'),
+        ex('Aperturas mancuernas banco inclinado',  4, '15, 15, 10, 10'),
+        ex('Cruces en poleas',                      4, '15'),
+        ex('Press militar con barra',               4, '10'),
+        ex('Elevaciones laterales mancuernas',      4, '30, 30, 20, 20'),
+        ex('Extensión tríceps polea alta (soga)',   4, '15, 15, 10, 8'),
+        ex('Press francés barra Z (banco plano)',   4, '10'),
       ],
     },
     {
-      id: uid(), name: 'Pierna', icon: '🦵',
+      id: uid(), name: 'Pull', icon: '🪝',
       exercises: [
-        ex('Sentadilla',          5, '5-8'),
-        ex('Peso muerto rumano',  4, '8-10'),
-        ex('Prensa',              3, '10-12'),
-        ex('Extensión cuádriceps',3, '12-15'),
-        ex('Femoral tumbado',     3, '12-15'),
-        ex('Elevación gemelos',   4, '12-15'),
+        ex('Face pull en polea (soga)',             4, '20'),
+        ex('Jalón al pecho agarre ancho',           4, '10'),
+        ex('Remo con barra',                        4, '10, 10, 8, 8'),
+        ex('Jalón cerrado + Remo bajo (superset)',  4, '15 + 15'),
+        ex('Curl bíceps soga (martillo)',           4, '10'),
+        ex('Curl bíceps · Método 21',               3, '21 (7+7+7)'),
+      ],
+    },
+    {
+      id: uid(), name: 'Híbrido', icon: '⚡',
+      exercises: [
+        exNote('Piernas · elige 2',  3, '—', 'Refuerzo puntos débiles'),
+        exNote('Push · elige 2',     3, '—', 'Refuerzo puntos débiles'),
+        exNote('Pull · elige 2',     3, '—', 'Refuerzo puntos débiles'),
       ],
     },
   ];
@@ -235,6 +247,9 @@ function seedRoutineFullBody() {
 function ex(name, sets, reps) {
   return { id: uid(), name, sets, reps, notes: '' };
 }
+function exNote(name, sets, reps, notes) {
+  return { id: uid(), name, sets, reps, notes };
+}
 
 /* ---------- Storage ---------- */
 let state = load();
@@ -246,6 +261,10 @@ function load() {
     // sanity fill
     if (!parsed.live) parsed.live = {};
     if (!parsed.sessions) parsed.sessions = [];
+    (parsed.users||[]).forEach(u => {
+      if (u.phone == null) u.phone = '';
+      if (u.partnerId === undefined) u.partnerId = null;
+    });
     return parsed;
   } catch (e) { return defaultState(); }
 }
@@ -298,6 +317,31 @@ function bestSet(userId, exerciseId) {
   return best;
 }
 
+/* ---------- WhatsApp motivation ---------- */
+const MOTIVATION = [
+  'Dale que se puede 💪 Ese peso no se levanta solo.',
+  'Un set más y estás más cerca de tu mejor versión 🔥',
+  'La rutina no se negocia. Vos podés 🚀',
+  'Hoy es el día. No hay excusas, hay ganas 💥',
+  'Cada rep cuenta. Enfoque total ⚡',
+  'Sos más fuerte que ayer. Demostralo 🏋️',
+  'La disciplina te lleva donde la motivación no llega ✨',
+  'Amor, dale al gimnasio que después nos comemos algo rico 💕',
+  'No hay atajos: dale que sos crack 🥇',
+  'Recordá por qué empezaste. Ahora terminá el entreno 💪',
+];
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function normalizePhone(p='') { return String(p).replace(/[^\d]/g, ''); }
+function waLink(phone, text) {
+  const p = normalizePhone(phone);
+  const t = encodeURIComponent(text);
+  return p ? `https://wa.me/${p}?text=${t}` : `https://wa.me/?text=${t}`;
+}
+function partnerOf(user) {
+  if (!user.partnerId) return null;
+  return state.users.find(u => u.id === user.partnerId) || null;
+}
+
 /* ---------- Live workout ---------- */
 function getOrStartLive(user, dayIdx) {
   const day = user.days[dayIdx];
@@ -331,15 +375,51 @@ function finishLive() {
   const u = activeUser();
   const live = state.live[u.id];
   if (!live) return;
-  // Only save if at least one set is done
   const anyDone = live.entries.some(e => e.sets.some(s => s.done));
+  let saved = null;
   if (anyDone) {
     live.date = Date.now();
-    state.sessions.push(JSON.parse(JSON.stringify(live)));
+    saved = JSON.parse(JSON.stringify(live));
+    state.sessions.push(saved);
   }
   delete state.live[u.id];
   save();
-  render();
+  if (saved) modalShareFinish(u, saved);
+  else render();
+}
+
+function modalShareFinish(user, session) {
+  const partner = partnerOf(user);
+  const doneSets = session.entries.reduce((a,e) => a + e.sets.filter(s=>s.done).length, 0);
+  const volume = session.entries.reduce((a,e) =>
+    a + e.sets.reduce((b,x) => b + (x.done?(Number(x.w)||0)*(Number(x.r)||0):0), 0), 0);
+  const top = session.entries.map(e => {
+    const best = e.sets.filter(s=>s.done).reduce((m,s)=> (Number(s.w)||0)>(m?Number(m.w)||0:0)?s:m, null);
+    return best ? `• ${e.name}: ${best.w||0}${user.unit}×${best.r||0}` : null;
+  }).filter(Boolean).slice(0,4).join('\n');
+  const msg = `¡Terminé ${session.dayName}! 💪\n${doneSets} sets · ${Math.round(volume)} ${user.unit} de volumen\n${top}`;
+
+  openModal(`
+    <div class="text-center mb-4">
+      <div class="text-5xl mb-2">🎉</div>
+      <h3 class="font-display text-2xl font-bold">¡Bien ahí, ${escapeHtml(user.name)}!</h3>
+      <p class="text-sm text-ink-300 mt-1">${doneSets} sets · ${Math.round(volume)} ${user.unit} totales</p>
+    </div>
+    <div class="glass rounded-2xl p-3 text-xs whitespace-pre-line text-ink-200 mb-4">${escapeHtml(msg)}</div>
+    <div class="space-y-2">
+      ${partner ? `
+        <a class="tap w-full grad-btn rounded-2xl py-3 font-semibold flex items-center justify-center gap-2" target="_blank" rel="noopener"
+           href="${waLink(partner.phone, msg)}">
+          <span>Compartir con ${escapeHtml(partner.name)}</span>
+          <span>${partner.phone ? '📲' : '💬'}</span>
+        </a>
+      ` : ''}
+      <a class="tap w-full chip rounded-2xl py-3 text-sm text-center block" target="_blank" rel="noopener"
+         href="${waLink('', msg)}">Compartir en WhatsApp</a>
+      <button id="close-share" class="tap w-full text-sm text-ink-300 py-2">Listo</button>
+    </div>
+  `);
+  $('#close-share').onclick = () => { closeModal(); render(); };
 }
 
 function discardLive() {
@@ -438,6 +518,27 @@ function viewToday() {
           Podés cambiar cualquier ejercicio antes o durante la sesión.
         </div>
       `}
+
+      ${motivateBar(u)}
+    </section>
+  `;
+}
+
+function motivateBar(u) {
+  const partner = partnerOf(u);
+  if (!partner) return '';
+  return `
+    <div class="glass rounded-2xl p-4 mt-6 shadow-card flex items-center gap-3">
+      <span class="avatar w-10 h-10 rounded-full bg-gradient-to-br ${partner.color} text-sm">${partner.name.slice(0,2).toUpperCase()}</span>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs text-ink-400">Motivá a</div>
+        <div class="font-semibold truncate">${escapeHtml(partner.name)} ${partner.phone ? '' : '<span class="text-[10px] text-amber-300">· sin teléfono</span>'}</div>
+      </div>
+      <button id="motivateBtn" class="tap grad-btn rounded-full px-4 py-2 text-sm font-semibold">Enviar 💌</button>
+    </div>
+  `;
+}
+
     </section>
   `;
 }
@@ -700,10 +801,21 @@ function modalEditUser(userId) {
       `).join('')}
     </div>
     <label class="block text-xs text-ink-400 mb-1">Unidad</label>
-    <div class="grid grid-cols-2 gap-2 mb-4">
+    <div class="grid grid-cols-2 gap-2 mb-3">
       <button data-unit="kg" class="tap chip rounded-xl py-2 text-sm ${u.unit==='kg'?'bg-white text-ink-900':''}">kg</button>
       <button data-unit="lb" class="tap chip rounded-xl py-2 text-sm ${u.unit==='lb'?'bg-white text-ink-900':''}">lb</button>
     </div>
+    <label class="block text-xs text-ink-400 mb-1">WhatsApp <span class="text-ink-500">(con código país, ej: 5491122334455)</span></label>
+    <input id="u-phone" class="set-input rounded-xl px-3 py-2 w-full mb-3" value="${escapeHtml(u.phone||'')}" placeholder="5491122334455" inputmode="tel" />
+    ${(!isNew && state.users.length>1) ? `
+      <label class="block text-xs text-ink-400 mb-1">Pareja de entreno (para motivar por WhatsApp)</label>
+      <select id="u-partner" class="set-input rounded-xl px-3 py-2 w-full mb-4">
+        <option value="">— Ninguna —</option>
+        ${state.users.filter(x=>x.id!==u.id).map(x=>`
+          <option value="${x.id}" ${u.partnerId===x.id?'selected':''}>${escapeHtml(x.name)}</option>
+        `).join('')}
+      </select>
+    ` : `<div class="mb-1"></div>`}
     <div class="flex gap-2">
       ${!isNew && state.users.length>1 ? `<button id="u-delete" class="tap chip rounded-2xl py-3 px-4 text-sm text-red-300">Eliminar</button>` : ''}
       <button id="u-save" class="tap flex-1 grad-btn rounded-2xl py-3 font-semibold">Guardar</button>
@@ -726,12 +838,16 @@ function modalEditUser(userId) {
   $('#u-save').addEventListener('click', () => {
     const name = $('#u-name').value.trim() || 'Sin nombre';
     const emoji = $('#u-emoji').value.trim() || '💪';
+    const phone = normalizePhone($('#u-phone').value);
+    const partnerSel = $('#u-partner');
+    const partnerId = partnerSel ? (partnerSel.value || null) : (u.partnerId || null);
     if (isNew) {
-      const nu = { id: uid(), name, emoji, color: picked.color, unit: picked.unit, days: seedRoutineFullBody() };
+      const nu = { id: uid(), name, emoji, color: picked.color, unit: picked.unit, phone, partnerId: null, days: seedRoutineFullBody() };
       state.users.push(nu);
       state.activeUserId = nu.id;
     } else {
       u.name = name; u.emoji = emoji; u.color = picked.color; u.unit = picked.unit;
+      u.phone = phone; u.partnerId = partnerId;
     }
     save(); closeModal(); render();
   });
@@ -885,6 +1001,23 @@ function bindDynamic() {
   const discardBtn = $('#discardBtn');
   if (discardBtn) discardBtn.onclick = () => {
     if (confirm('¿Descartar la sesión actual? No se guardará nada.')) discardLive();
+  };
+  const motivateBtn = $('#motivateBtn');
+  if (motivateBtn) motivateBtn.onclick = () => {
+    const u = activeUser();
+    const partner = partnerOf(u);
+    if (!partner) return;
+    const msg = `${pick(MOTIVATION)}\n\n— ${u.name}`;
+    if (!partner.phone) {
+      openModal(`
+        <h3 class="font-display text-xl font-bold mb-2">Falta el WhatsApp de ${escapeHtml(partner.name)}</h3>
+        <p class="text-sm text-ink-300 mb-4">Agregalo desde el selector de persona (✎) para mandar mensajes con un toque.</p>
+        <a target="_blank" rel="noopener" href="${waLink('', msg)}" class="tap w-full grad-btn rounded-2xl py-3 font-semibold block text-center">Abrir WhatsApp igual</a>
+        <button class="tap w-full text-sm text-ink-300 py-3 mt-1" onclick="closeModal()">Cerrar</button>
+      `);
+      return;
+    }
+    window.open(waLink(partner.phone, msg), '_blank', 'noopener');
   };
 
   // Set rows (only meaningful when live exists)
